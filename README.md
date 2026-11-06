@@ -63,3 +63,41 @@ Cross-validation produced a mean R² of **0.9261** for Linear Regression and **0
 Despite Gradient Boosting having a higher cross-validated mean R², Linear Regression was selected because the prescribed selection rule requires choosing the model with the lowest validation RMSE. Its validation RMSE of **4.8912 hours** was slightly lower than Gradient Boosting's **4.9165 hours**.
 
 The selected Linear Regression model achieved a test RMSE of **4.5235 hours** and a test R² of **0.9493**.
+
+## Model results (classification)
+
+### 1. Blind baseline
+
+The blind baseline achieved an accuracy of **0.7667**, but its precision, recall and F1-score were all zero. It predicted every parcel as on-time and failed to identify any of the 42 delayed parcels in the validation set. Therefore, despite its apparently reasonable accuracy, it is operationally useless.
+
+### 2. Feature importance and noise analysis
+
+The seven strongest features according to ANOVA F-score were `distance_km`, `hub_tier`, `hub_daily_capacity`, `n_stops`, `promised_hours`, `rain_flag` and `sale_event_flag`.
+
+The five bookkeeping noise columns collectively contributed **0.2245 (22.45%)** of the Random Forest's feature importance. However, all five had F-ranks outside the top seven and individual F-scores below 10. This demonstrates that Random Forest can assign some importance to features that have weak individual class-separation signals.
+
+### 3. SelectKBest experiment
+
+The experiment compared 5, 7, 10, 12 and 17 selected features. Selecting seven features achieved the highest validation F1-score of **0.8333**. Therefore, seven features were retained for subsequent model tuning and final classification.
+
+### 4. Hyperparameter tuning
+
+Grid Search achieved a best cross-validation accuracy of **0.8952** and validation F1 of **0.7750**. Randomized Search achieved a cross-validation accuracy of **0.8905** and validation F1 of **0.7848**.
+
+The untuned Random Forest using the same seven selected features achieved the highest validation F1 of **0.8333**.
+
+This demonstrates that tuning does not guarantee improved performance. The validation dataset contains only 180 observations, so small changes in predictions can noticeably affect the F1-score. The untuned configuration was therefore selected.
+
+### 5. Alert threshold selection
+
+The selected alert threshold was **0.5**, the highest threshold that maintained validation recall of at least 0.80.
+
+At this threshold, validation precision was **0.7955** and recall was **0.8333**. Raising the threshold to 0.6 increased precision to 0.8889 but reduced recall to 0.7619, violating the operational requirement.
+
+### 6. Final test performance
+
+The final classifier achieved test precision of **0.6889**, recall of **0.7561** and an F1-score of **0.7209**.
+
+This means approximately 6.89 out of every 10 flagged parcels were genuinely delayed, while approximately 7.56 out of every 10 genuinely delayed parcels were identified.
+
+Test recall was lower than validation recall of 0.8333. This difference should be interpreted carefully because the test dataset contains only 41 delayed parcels, making the recall estimate sensitive to a small number of classification errors.
